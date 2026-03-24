@@ -66,3 +66,16 @@ The scanner uses Scapy to capture 802.11 beacon frames while the wireless interf
 - Signal strength values depend on hardware and environment  
 - Client detection is passive and may not capture all devices  
 - Only tested on Linux-based systems  
+
+## Disclaimer
+
+This tool is intended for educational and research purposes only.
+
+It is designed to be used in controlled environments such as:
+- personal labs  
+- authorized penetration testing environments  
+- networks you own or have explicit permission to test  
+
+Unauthorized use of this tool against networks without permission may be illegal.
+
+The author is not responsible for any misuse.
