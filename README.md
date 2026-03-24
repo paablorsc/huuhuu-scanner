@@ -18,8 +18,6 @@ A lightweight WiFi reconnaissance tool built in Python using Scapy.
 
 ## Installation
 
-Clone the repository:
-
 ```bash
 git clone https://github.com/paablorsc/huuhuu-scanner.git
 cd huuhuu-scanner
