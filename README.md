@@ -78,3 +78,7 @@ It is designed to be used in controlled environments such as:
 Unauthorized use of this tool against networks without permission may be illegal.
 
 The author is not responsible for any misuse.
+
+## Author
+
+Created by Pablo
