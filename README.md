@@ -19,12 +19,9 @@ A lightweight WiFi reconnaissance tool built in Python using Scapy.
 
 ## Screenshots
 
-### Menu
-![Menu](https://github.com/user-attachments/assets/a7aa85ba-54f9-482b-aebe-430b0f00f77e)
+### [Menu](https://github.com/user-attachments/assets/a7aa85ba-54f9-482b-aebe-430b0f00f77e)
 
-### Scanning networks
-![Scan](https://github.com/user-attachments/assets/528cefb0-cfe6-4c10-ab11-a75999b26ca5)
-
+### [Scanning networks](https://github.com/user-attachments/assets/528cefb0-cfe6-4c10-ab11-a75999b26ca5)
 
 ## Installation
 
