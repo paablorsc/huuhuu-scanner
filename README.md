@@ -17,6 +17,16 @@ A lightweight WiFi reconnaissance tool built in Python using Scapy.
 - Safe cleanup and WiFi restoration
 - Dynamic terminal UI (animated owl 🦉)
 
+## Screenshots
+
+### Menu
+![Pause](screenshots/pause.png)
+
+
+### Scanning networks
+![Scan](screenshots/scan.png)
+
+
 ## Installation
 
 ```bash
