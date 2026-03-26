@@ -7,15 +7,15 @@ A lightweight WiFi reconnaissance tool built in Python using Scapy.
 
 ## Features
 
-- Real-time WiFi network scanning  
-- Signal strength analysis (RSSI and classification)  
-- Security detection (Open, WPA, WPA2, WPA3)  
-- Live statistics (networks, clients, strongest access point)  
-- Focus mode (track a specific BSSID)  
-- Passive client detection  
-- Channel hopping  
-- Identification of weak or open networks  
-- Command-line interface support (--interface)
+- Real-time WiFi scanning (802.11)
+- Signal strength analysis (RSSI)
+- Security detection (Open, WPA, WPA2, WPA3)
+- Live statistics (networks, clients, strongest AP)
+- Interactive controls (pause/resume)
+- CLI support (--open, --weak, --target)
+- Automatic monitor mode handling
+- Safe cleanup and WiFi restoration
+- Dynamic terminal UI (animated owl 🦉)
 
 ## Installation
 
