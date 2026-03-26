@@ -15,6 +15,7 @@ A lightweight WiFi reconnaissance tool built in Python using Scapy.
 - Passive client detection  
 - Channel hopping  
 - Identification of weak or open networks  
+- Command-line interface support (--interface)
 
 ## Installation
 
@@ -34,7 +35,7 @@ pip install -r requirements.txt
 ## Usage
 
 ```bash
-sudo python3 huuhuu_scanner.py
+sudo huuhuu-scanner -i wlan0
 
 ## Example Output
 

@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import os
 import subprocess
 import sys
@@ -5,25 +7,37 @@ import time
 import threading
 import tty
 import termios
+import argparse
 from scapy.all import sniff
 from scapy.layers.dot11 import Dot11, Dot11Beacon
 
 networks = {}
 clients = set()
 running = True
+paused = False
 
-# ------------------ COLORS ------------------
 GREEN = "\033[92m"
 YELLOW = "\033[93m"
 RED = "\033[91m"
 CYAN = "\033[96m"
 RESET = "\033[0m"
 
-# ------------------ YOUR OWL BANNER ------------------
+# ------------------ OWL INTRO ------------------
+def owl_intro():
+    frames = ["huu.", "huu..", "huu...", "huuh.", "huuhu.", "huuhuu!"]
+    for f in frames:
+        os.system("clear")
+        print(f"{CYAN}\n\n      {f}\n{RESET}")
+        time.sleep(0.15)
+
+# ------------------ BANNER ------------------
 def banner():
     print(f"""{CYAN}
-   huuhuu
-
+   _________
+  < huuhuu! >
+   ---------
+        \\
+         \\
     ,_,  
    (o,o) 
    (   )
@@ -45,8 +59,7 @@ def menu():
     if c == "1": return {}
     if c == "2": return {"open": True}
     if c == "3": return {"weak": True}
-    if c == "4":
-        return {"target": input("BSSID: ").strip()}
+    if c == "4": return {"target": input("BSSID: ").strip()}
     if c == "5": sys.exit(0)
 
     return {}
@@ -70,15 +83,20 @@ def sig_label(s):
 
 # ------------------ DISPLAY ------------------
 def display(f):
+    global paused
+
+    if paused:
+        return
+
     os.system("clear")
     banner()
 
-    total = len(networks)
+    total_networks = len(networks)
     open_n = sum(1 for n in networks.values() if security(n["crypto"]) == "Open")
     strongest = max(networks.values(), key=lambda x: x["sig"])["ssid"] if networks else "-"
 
-    print(f"{CYAN}CTRL+A → menu | CTRL+C → exit{RESET}")
-    print(f"{GREEN}Networks:{total}  Open:{open_n}  Clients:{len(clients)}  Strongest:{strongest}{RESET}\n")
+    print(f"{CYAN}CTRL+A → menu | 1 → pause/resume | CTRL+C → exit{RESET}")
+    print(f"{GREEN}Networks:{total_networks}  Open:{open_n}  Clients:{len(clients)}  Strongest:{strongest}{RESET}\n")
 
     print(f"{'SSID':15} {'BSSID':17} {'CH':3} {'B':4} {'RSSI':5} {'SIG':6} {'SEC':7} {'CL'}")
     print("-"*85)
@@ -102,22 +120,30 @@ def display(f):
 
 # ------------------ KEY LISTENER ------------------
 def key_listener():
-    global running
+    global running, paused
     fd = sys.stdin.fileno()
     old = termios.tcgetattr(fd)
+
     try:
         tty.setcbreak(fd)
         while True:
-            if sys.stdin.read(1) == '\x01':  # CTRL+A
+            key = sys.stdin.read(1)
+
+            if key == '\x01':
                 running = False
                 break
+
+            elif key == '1':
+                paused = not paused
+
     finally:
         termios.tcsetattr(fd, termios.TCSADRAIN, old)
 
 # ------------------ PACKETS ------------------
 def handler(p, f):
     global running
-    if not running: return
+    if not running:
+        return
 
     if p.haslayer(Dot11):
         if p.addr1: clients.add(p.addr1)
@@ -131,11 +157,13 @@ def handler(p, f):
         ch = stats.get("channel")
         crypto = stats.get("crypto", [])
 
-        try: sig = p.dBm_AntSignal
-        except: sig = -100
+        try:
+            sig = p.dBm_AntSignal
+        except:
+            sig = -100
 
         if bssid not in networks:
-            networks[bssid] = {"count":0, "clients":[]}
+            networks[bssid] = {"clients": set()}
 
         networks[bssid].update({
             "ssid": ssid,
@@ -143,8 +171,6 @@ def handler(p, f):
             "crypto": crypto,
             "sig": sig
         })
-
-        networks[bssid]["count"] += 1
 
         display(f)
 
@@ -168,40 +194,101 @@ def get_mon():
 
 # ------------------ CLEANUP ------------------
 def cleanup(i):
-    if i:
-        subprocess.run(["airmon-ng","stop",i], stdout=subprocess.DEVNULL)
-    subprocess.run(["systemctl","restart","NetworkManager"], stdout=subprocess.DEVNULL)
+    try:
+        print("\n[+] Restoring WiFi...")
+
+        iface = None
+        if i:
+            iface = i.replace("mon", "")
+            subprocess.run(["airmon-ng", "stop", i],
+                           stdout=subprocess.DEVNULL,
+                           stderr=subprocess.DEVNULL)
+
+        time.sleep(1)
+
+        if iface:
+            subprocess.run(["ip", "link", "set", iface, "down"],
+                           stdout=subprocess.DEVNULL,
+                           stderr=subprocess.DEVNULL)
+
+            subprocess.run(["ip", "link", "set", iface, "up"],
+                           stdout=subprocess.DEVNULL,
+                           stderr=subprocess.DEVNULL)
+
+        subprocess.run(["rfkill", "unblock", "all"],
+                       stdout=subprocess.DEVNULL,
+                       stderr=subprocess.DEVNULL)
+
+        subprocess.run(["systemctl", "restart", "NetworkManager"],
+                       stdout=subprocess.DEVNULL,
+                       stderr=subprocess.DEVNULL)
+
+        time.sleep(2)
+
+        subprocess.run(["nmcli", "radio", "wifi", "on"],
+                       stdout=subprocess.DEVNULL,
+                       stderr=subprocess.DEVNULL)
+
+        print("[+] WiFi fully restored")
+
+    except Exception:
+        print("[!] Cleanup error (manual restart may be needed)")
 
 # ------------------ MAIN ------------------
-while True:
-    os.system("clear")
-    banner()
+def main():
+    parser = argparse.ArgumentParser(description="huuhuu scanner")
+    parser.add_argument("-i", "--interface")
+    parser.add_argument("--open", action="store_true")
+    parser.add_argument("--weak", action="store_true")
+    parser.add_argument("--target")
 
-    iface = input("Interface: ").strip()
-    if not iface: continue
+    args = parser.parse_args()
 
-    subprocess.run(["airmon-ng","check","kill"], stdout=subprocess.DEVNULL)
-    subprocess.run(["airmon-ng","start",iface], stdout=subprocess.DEVNULL)
+    owl_intro()
 
-    mon = get_mon()
-    if not mon:
-        print("Monitor mode failed")
-        time.sleep(2)
-        continue
+    while True:
+        os.system("clear")
+        banner()
 
-    filters = menu()
+        iface = args.interface if args.interface else input("Interface: ").strip()
 
-    running = True
-    networks.clear()
-    clients.clear()
+        if not iface:
+            continue
 
-    threading.Thread(target=key_listener, daemon=True).start()
-    threading.Thread(target=hop, args=(mon,), daemon=True).start()
+        subprocess.run(["airmon-ng","check","kill"], stdout=subprocess.DEVNULL)
+        subprocess.run(["airmon-ng","start",iface], stdout=subprocess.DEVNULL)
 
-    try:
-        sniff(iface=mon, prn=lambda p: handler(p,filters), store=0, monitor=True)
-    except KeyboardInterrupt:
+        mon = get_mon()
+        if not mon:
+            print("Monitor mode failed")
+            time.sleep(2)
+            continue
+
+        if args.open or args.weak or args.target:
+            filters = {
+                "open": args.open,
+                "weak": args.weak,
+                "target": args.target
+            }
+        else:
+            filters = menu()
+
+        global running
+        running = True
+        networks.clear()
+        clients.clear()
+
+        threading.Thread(target=key_listener, daemon=True).start()
+        threading.Thread(target=hop, args=(mon,), daemon=True).start()
+
+        try:
+            sniff(iface=mon, prn=lambda p: handler(p,filters), store=0, monitor=True)
+        except KeyboardInterrupt:
+            print("\nExiting...")
+            cleanup(mon)
+            return
+
         cleanup(mon)
-        sys.exit(0)
 
-    cleanup(mon)
+if __name__ == "__main__":
+    main()
