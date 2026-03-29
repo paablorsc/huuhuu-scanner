@@ -61,7 +61,8 @@ The scanner uses Scapy to capture 802.11 beacon frames while the wireless interf
 
 ## Controls
 
-- CTRL+A → Return to main menu  
+- CTRL+A → Return to main menu
+- CTRL+1 → Make the networks on the screen stationary
 - CTRL+C → Exit and restore WiFi  
 
 ## Limitations
